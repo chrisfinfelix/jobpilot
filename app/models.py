@@ -39,3 +39,12 @@ class GenerationResult(BaseModel):
     gaps_addressed_honestly: str
     talking_points: list[str]
     used_company_research: bool
+
+
+class JobDescriptionResult(BaseModel):
+    job_description: str
+    source_url: str
+    source_title: str
+    note: str
+    from_cache: bool = False
+    cached_age_hours: float | None = None

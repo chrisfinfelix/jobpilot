@@ -1,594 +1,403 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>JobPilot — Step 1-3 Test</title>
-    <style>
-      body {
-        font-family: system-ui, sans-serif;
-        max-width: 640px;
-        margin: 40px auto;
-        padding: 0 16px;
-        color: #1a1a1a;
-      }
-      h1 {
-        font-size: 1.4rem;
-      }
-      h2 {
-        font-size: 1.1rem;
-      }
-      label {
-        display: block;
-        margin-top: 16px;
-        font-weight: 600;
-        font-size: 0.9rem;
-      }
-      textarea,
-      input[type="file"],
-      input[type="text"] {
-        width: 100%;
-        margin-top: 6px;
-        box-sizing: border-box;
-        padding: 8px;
-      }
-      textarea {
-        min-height: 120px;
-        font-family: inherit;
-      }
-      input[type="text"] {
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        font: inherit;
-      }
-      .btn-row {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      button {
-        margin-top: 20px;
-        padding: 10px 18px;
-        background: #111;
-        color: #fff;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-      }
-      button.secondary {
-        background: #2f5496;
-      }
-      button:disabled {
-        opacity: 0.5;
-        cursor: default;
-      }
-      #matchResult,
-      #generateResult,
-      #researchResult {
-        margin-top: 16px;
-        white-space: pre-wrap;
-        padding: 16px;
-        border-radius: 8px;
-        display: none;
-      }
-      #matchResult {
-        background: #f5f5f5;
-      }
-      #generateResult {
-        background: #f0fbe8;
-      }
-      #researchResult {
-        background: #eef;
-      }
-      .score {
-        font-size: 2rem;
-        font-weight: 700;
-      }
-      .tag {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        margin: 2px;
-      }
-      .matched {
-        background: #d4f4dd;
-      }
-      .missing {
-        background: #fde2e2;
-      }
-      .warn {
-        background: #fff3cd;
-      }
+<head>
+<meta charset="UTF-8" />
+<title>JobPilot — Test</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; color: #1a1a1a; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.1rem; }
+  label { display: block; margin-top: 16px; font-weight: 600; font-size: 0.9rem; }
+  textarea, input[type=file], input[type=text] { width: 100%; margin-top: 6px; box-sizing: border-box; padding: 8px; }
+  textarea { min-height: 120px; font-family: inherit; }
+  input[type=text] { border: 1px solid #ccc; border-radius: 6px; font: inherit; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  button { margin-top: 20px; padding: 10px 18px; background: #111; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+  button.secondary { background: #2f5496; }
+  button.tertiary { background: #6b6b6b; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  #matchResult, #generateResult, #researchResult {
+    margin-top: 16px; white-space: pre-wrap; padding: 16px; border-radius: 8px; display: none;
+  }
+  #matchResult { background: #f5f5f5; }
+  #generateResult { background: #f0fbe8; }
+  #researchResult { background: #eef; }
+  .score { font-size: 2rem; font-weight: 700; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; margin: 2px; }
+  .matched { background: #d4f4dd; }
+  .missing { background: #fde2e2; }
+  .warn { background: #fff3cd; }
 
-      /* Searchable combobox (company / role picker) */
-      .combo {
-        position: relative;
-        margin-top: 6px;
-      }
-      .combo-input-row {
-        display: flex;
-        gap: 0;
-      }
-      .combo-input {
-        flex: 1;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 6px 0 0 6px;
-        box-sizing: border-box;
-        font: inherit;
-      }
-      .combo-toggle {
-        padding: 8px 12px;
-        border: 1px solid #ccc;
-        border-left: none;
-        border-radius: 0 6px 6px 0;
-        background: #f0f0f0;
-        cursor: pointer;
-        font-size: 0.8rem;
-      }
-      .combo-toggle:hover {
-        background: #e4e4e4;
-      }
-      .combo-list {
-        position: absolute;
-        z-index: 10;
-        top: 100%;
-        left: 0;
-        right: 0;
-        max-height: 220px;
-        overflow-y: auto;
-        background: #fff;
-        border: 1px solid #ccc;
-        border-top: none;
-        border-radius: 0 0 6px 6px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-        display: none;
-      }
-      .combo-list.open {
-        display: block;
-      }
-      .combo-option {
-        padding: 8px 10px;
-        cursor: pointer;
-        font-size: 0.92rem;
-      }
-      .combo-option:hover,
-      .combo-option.active {
-        background: #eef;
-      }
-      .combo-empty {
-        padding: 8px 10px;
-        color: #888;
-        font-size: 0.88rem;
-        font-style: italic;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>JobPilot — Step 1-3 Test</h1>
+  /* Searchable combobox (company / role picker) */
+  .combo { position: relative; margin-top: 6px; }
+  .combo-input-row { display: flex; gap: 0; }
+  .combo-input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 6px 0 0 6px; box-sizing: border-box; font: inherit; }
+  .combo-toggle { padding: 8px 12px; border: 1px solid #ccc; border-left: none; border-radius: 0 6px 6px 0; background: #f0f0f0; cursor: pointer; font-size: 0.8rem; }
+  .combo-toggle:hover { background: #e4e4e4; }
+  .combo-list { position: absolute; z-index: 10; top: 100%; left: 0; right: 0; max-height: 220px; overflow-y: auto; background: #fff; border: 1px solid #ccc; border-top: none; border-radius: 0 0 6px 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); display: none; }
+  .combo-list.open { display: block; }
+  .combo-option { padding: 8px 10px; cursor: pointer; font-size: 0.92rem; }
+  .combo-option:hover, .combo-option.active { background: #eef; }
+  .combo-empty { padding: 8px 10px; color: #888; font-size: 0.88rem; font-style: italic; }
+</style>
+</head>
+<body>
+  <h1>JobPilot — Test</h1>
+  <p>Fill this in once. Pick whichever action(s) you want below — they all share the same company/role/job description/resume.</p>
 
-    <h2>Step 2: Company/Role Research (RAG)</h2>
-    <p>
-      Do this first — if you research a company/role here, Step 3 below will
-      automatically reuse it.
-    </p>
-    <form id="researchForm">
-      <label>Company</label>
-      <div class="combo" data-combo="company">
-        <div class="combo-input-row">
-          <input
-            type="text"
-            class="combo-input"
-            name="company"
-            placeholder="Type to search, or click ▾"
-            autocomplete="off"
-            required
-          />
-          <button
-            type="button"
-            class="combo-toggle"
-            aria-label="Show all companies"
-          >
-            ▾
-          </button>
-        </div>
-        <div class="combo-list"></div>
+  <form id="mainForm">
+    <label>Company</label>
+    <div class="combo" data-combo="company">
+      <div class="combo-input-row">
+        <input type="text" class="combo-input" name="company" placeholder="Type to search, or click ▾" autocomplete="off">
+        <button type="button" class="combo-toggle" aria-label="Show all companies">▾</button>
       </div>
+      <div class="combo-list"></div>
+    </div>
 
-      <label>Role</label>
-      <div class="combo" data-combo="role">
-        <div class="combo-input-row">
-          <input
-            type="text"
-            class="combo-input"
-            name="role"
-            placeholder="Type to search, or click ▾"
-            autocomplete="off"
-            required
-          />
-          <button
-            type="button"
-            class="combo-toggle"
-            aria-label="Show all roles"
-          >
-            ▾
-          </button>
-        </div>
-        <div class="combo-list"></div>
+    <label>Role</label>
+    <div class="combo" data-combo="role">
+      <div class="combo-input-row">
+        <input type="text" class="combo-input" name="role" placeholder="Type to search, or click ▾" autocomplete="off">
+        <button type="button" class="combo-toggle" aria-label="Show all roles">▾</button>
       </div>
+      <div class="combo-list"></div>
+    </div>
 
-      <button type="submit">Research</button>
-    </form>
-    <div id="researchResult"></div>
+    <label>Job description</label>
+    <div class="btn-row" style="margin-top:6px;">
+      <button type="button" id="autofetchJdBtn" class="secondary" style="margin-top:0;font-size:0.85rem;padding:6px 12px;">
+        🔍 Auto-fetch from company + role above
+      </button>
+    </div>
+    <textarea name="job_description" placeholder="Paste the job description here, or use Auto-fetch above..." style="margin-top:8px;"></textarea>
+    <p id="autofetchNote" style="font-size:0.82rem;color:#666;display:none;margin-top:4px;"></p>
 
-    <hr style="margin: 32px 0" />
+    <label>Resume file (PDF, DOCX, or TXT)</label>
+    <input type="file" name="resume_file" accept=".pdf,.docx,.txt" />
 
-    <h2>Steps 1 &amp; 3: Resume + Job Description</h2>
-    <p>
-      Fill this in once, then pick what you want: just the match score, or a
-      full generated cover letter (which also reuses the company research above,
-      if cached).
-    </p>
+    <label>...or paste resume text instead</label>
+    <textarea name="pasted_resume_text" placeholder="Paste resume text here if not uploading a file..."></textarea>
 
-    <form id="applicationForm">
-      <label>Job description</label>
-      <textarea
-        name="job_description"
-        placeholder="Paste the job description here..."
-        required
-      ></textarea>
+    <div class="btn-row">
+      <button type="button" id="researchBtn" class="tertiary">Research Company</button>
+      <button type="button" id="scoreBtn">Get Match Score</button>
+      <button type="button" id="generateBtn" class="secondary">Generate Cover Letter</button>
+    </div>
+  </form>
 
-      <label>Resume file (PDF, DOCX, or TXT)</label>
-      <input type="file" name="resume_file" accept=".pdf,.docx,.txt" />
+  <div id="researchResult"></div>
+  <div id="matchResult"></div>
+  <div id="generateResult"></div>
 
-      <label>...or paste resume text instead</label>
-      <textarea
-        name="pasted_resume_text"
-        placeholder="Paste resume text here if not uploading a file..."
-      ></textarea>
+  <script>
+    // ---------- Searchable combobox (company / role) ----------
+    function initCombo(root, items) {
+      const input = root.querySelector('.combo-input');
+      const toggleBtn = root.querySelector('.combo-toggle');
+      const list = root.querySelector('.combo-list');
+      let activeIndex = -1;
 
-      <label>Company (optional — only needed to reuse cached research)</label>
-      <div class="combo" data-combo="app-company">
-        <div class="combo-input-row">
-          <input
-            type="text"
-            class="combo-input"
-            name="company"
-            placeholder="Type to search, or click ▾"
-            autocomplete="off"
-          />
-          <button
-            type="button"
-            class="combo-toggle"
-            aria-label="Show all companies"
-          >
-            ▾
-          </button>
-        </div>
-        <div class="combo-list"></div>
-      </div>
+      function renderOptions(filterText) {
+        const query = filterText.trim().toLowerCase();
+        const matches = query
+          ? items.filter(item => item.toLowerCase().includes(query))
+          : items;
 
-      <label>Role (optional)</label>
-      <div class="combo" data-combo="app-role">
-        <div class="combo-input-row">
-          <input
-            type="text"
-            class="combo-input"
-            name="role"
-            placeholder="Type to search, or click ▾"
-            autocomplete="off"
-          />
-          <button
-            type="button"
-            class="combo-toggle"
-            aria-label="Show all roles"
-          >
-            ▾
-          </button>
-        </div>
-        <div class="combo-list"></div>
-      </div>
+        list.innerHTML = '';
+        activeIndex = -1;
 
-      <div class="btn-row">
-        <button type="button" id="scoreBtn">Get Match Score</button>
-        <button type="button" id="generateBtn" class="secondary">
-          Generate Cover Letter
-        </button>
-      </div>
-    </form>
+        if (matches.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'combo-empty';
+          empty.textContent = 'No match — your typed value will be used as-is';
+          list.appendChild(empty);
+          return;
+        }
 
-    <div id="matchResult"></div>
-    <div id="generateResult"></div>
-
-    <script>
-      // ---------- Searchable combobox (company / role) ----------
-      function initCombo(root, items) {
-        const input = root.querySelector(".combo-input");
-        const toggleBtn = root.querySelector(".combo-toggle");
-        const list = root.querySelector(".combo-list");
-        let activeIndex = -1;
-
-        function renderOptions(filterText) {
-          const query = filterText.trim().toLowerCase();
-          const matches = query
-            ? items.filter((item) => item.toLowerCase().includes(query))
-            : items;
-
-          list.innerHTML = "";
-          activeIndex = -1;
-
-          if (matches.length === 0) {
-            const empty = document.createElement("div");
-            empty.className = "combo-empty";
-            empty.textContent =
-              "No match — your typed value will be used as-is";
-            list.appendChild(empty);
-            return;
-          }
-
-          matches.slice(0, 100).forEach((item) => {
-            const opt = document.createElement("div");
-            opt.className = "combo-option";
-            opt.textContent = item;
-            opt.addEventListener("mousedown", (e) => {
-              e.preventDefault();
-              input.value = item;
-              closeList();
-            });
-            list.appendChild(opt);
+        matches.slice(0, 100).forEach((item) => {
+          const opt = document.createElement('div');
+          opt.className = 'combo-option';
+          opt.textContent = item;
+          opt.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            input.value = item;
+            closeList();
           });
-        }
-
-        function openList(filterText) {
-          renderOptions(filterText ?? input.value);
-          list.classList.add("open");
-        }
-        function closeList() {
-          list.classList.remove("open");
-        }
-
-        input.addEventListener("input", () => openList(input.value));
-        input.addEventListener("focus", () => openList(input.value));
-        input.addEventListener("blur", () => setTimeout(closeList, 100));
-
-        toggleBtn.addEventListener("click", () => {
-          if (list.classList.contains("open")) {
-            closeList();
-          } else {
-            openList("");
-            input.focus();
-          }
-        });
-
-        input.addEventListener("keydown", (e) => {
-          const options = Array.from(list.querySelectorAll(".combo-option"));
-          if (!list.classList.contains("open") || options.length === 0) return;
-
-          if (e.key === "ArrowDown") {
-            e.preventDefault();
-            activeIndex = Math.min(activeIndex + 1, options.length - 1);
-          } else if (e.key === "ArrowUp") {
-            e.preventDefault();
-            activeIndex = Math.max(activeIndex - 1, 0);
-          } else if (e.key === "Enter" && activeIndex >= 0) {
-            e.preventDefault();
-            input.value = options[activeIndex].textContent;
-            closeList();
-            return;
-          } else if (e.key === "Escape") {
-            closeList();
-            return;
-          } else {
-            return;
-          }
-
-          options.forEach((o) => o.classList.remove("active"));
-          options[activeIndex].classList.add("active");
-          options[activeIndex].scrollIntoView({ block: "nearest" });
+          list.appendChild(opt);
         });
       }
 
-      async function setupCombos() {
-        try {
-          const [companiesRes, rolesRes] = await Promise.all([
-            fetch("/api/companies"),
-            fetch("/api/roles"),
-          ]);
-          const { companies } = await companiesRes.json();
-          const { roles } = await rolesRes.json();
-
-          // Both the Step 2 research form and the merged Step 1+3 form get
-          // their own combobox instances, sharing the same bundled lists.
-          initCombo(
-            document.querySelector('[data-combo="company"]'),
-            companies,
-          );
-          initCombo(document.querySelector('[data-combo="role"]'), roles);
-          initCombo(
-            document.querySelector('[data-combo="app-company"]'),
-            companies,
-          );
-          initCombo(document.querySelector('[data-combo="app-role"]'), roles);
-        } catch (err) {
-          console.error(
-            "Could not load company/role lists, falling back to free text:",
-            err,
-          );
-        }
+      function openList(filterText) {
+        renderOptions(filterText ?? input.value);
+        list.classList.add('open');
       }
-      setupCombos();
+      function closeList() {
+        list.classList.remove('open');
+      }
 
-      // ---------- Step 2: Research ----------
-      const researchForm = document.getElementById("researchForm");
-      const researchResultDiv = document.getElementById("researchResult");
+      input.addEventListener('input', () => openList(input.value));
+      input.addEventListener('focus', () => openList(input.value));
+      input.addEventListener('blur', () => setTimeout(closeList, 100));
 
-      researchForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const button = researchForm.querySelector("button[type=submit]");
-        button.disabled = true;
-        button.textContent = "Researching...";
-        researchResultDiv.style.display = "block";
-        researchResultDiv.textContent =
-          "Searching the web, then asking Groq to summarize...";
+      toggleBtn.addEventListener('click', () => {
+        if (list.classList.contains('open')) {
+          closeList();
+        } else {
+          openList('');
+          input.focus();
+        }
+      });
 
-        try {
-          const formData = new FormData(researchForm);
-          const params = new URLSearchParams({
-            company: formData.get("company"),
-            role: formData.get("role"),
-          });
-          const res = await fetch("/api/research?" + params.toString());
-          const data = await res.json();
+      input.addEventListener('keydown', (e) => {
+        const options = Array.from(list.querySelectorAll('.combo-option'));
+        if (!list.classList.contains('open') || options.length === 0) return;
 
-          if (!res.ok) {
-            researchResultDiv.textContent =
-              "Error: " + (data.detail || JSON.stringify(data));
-            return;
-          }
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          activeIndex = Math.min(activeIndex + 1, options.length - 1);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          activeIndex = Math.max(activeIndex - 1, 0);
+        } else if (e.key === 'Enter' && activeIndex >= 0) {
+          e.preventDefault();
+          input.value = options[activeIndex].textContent;
+          closeList();
+          return;
+        } else if (e.key === 'Escape') {
+          closeList();
+          return;
+        } else {
+          return;
+        }
 
-          const cacheLine = data.from_cache
-            ? `<p><em>Served from cache (${data.cached_age_hours}h old)</em></p>`
-            : `<p><em>Freshly researched</em></p>`;
+        options.forEach(o => o.classList.remove('active'));
+        options[activeIndex].classList.add('active');
+        options[activeIndex].scrollIntoView({ block: 'nearest' });
+      });
+    }
 
-          researchResultDiv.innerHTML = `
+    async function setupCombos() {
+      try {
+        const [companiesRes, rolesRes] = await Promise.all([
+          fetch('/api/companies'),
+          fetch('/api/roles'),
+        ]);
+        const { companies } = await companiesRes.json();
+        const { roles } = await rolesRes.json();
+
+        initCombo(document.querySelector('[data-combo="company"]'), companies);
+        initCombo(document.querySelector('[data-combo="role"]'), roles);
+      } catch (err) {
+        console.error('Could not load company/role lists, falling back to free text:', err);
+      }
+    }
+    setupCombos();
+
+    // ---------- Shared form + all buttons ----------
+    const mainForm = document.getElementById('mainForm');
+    const researchResultDiv = document.getElementById('researchResult');
+    const matchResultDiv = document.getElementById('matchResult');
+    const generateResultDiv = document.getElementById('generateResult');
+    const researchBtn = document.getElementById('researchBtn');
+    const scoreBtn = document.getElementById('scoreBtn');
+    const generateBtn = document.getElementById('generateBtn');
+
+    function hideAllResults() {
+      researchResultDiv.style.display = 'none';
+      matchResultDiv.style.display = 'none';
+      generateResultDiv.style.display = 'none';
+    }
+
+    function validateCompanyRole() {
+      const company = mainForm.company.value.trim();
+      const role = mainForm.role.value.trim();
+      if (!company || !role) {
+        alert('Please fill in Company and Role first.');
+        return null;
+      }
+      return { company, role };
+    }
+
+    function validateResumeAndJd() {
+      const jd = mainForm.job_description.value.trim();
+      if (jd.length < 20) {
+        alert('Please paste a job description (at least a couple sentences), or use Auto-fetch.');
+        return false;
+      }
+      const hasFile = mainForm.resume_file.files.length > 0;
+      const hasPasted = mainForm.pasted_resume_text.value.trim().length > 0;
+      if (!hasFile && !hasPasted) {
+        alert('Please upload a resume file or paste resume text.');
+        return false;
+      }
+      return true;
+    }
+
+    // ---------- Auto-fetch job description ----------
+    const autofetchBtn = document.getElementById('autofetchJdBtn');
+    const autofetchNote = document.getElementById('autofetchNote');
+    const jdTextarea = mainForm.job_description;
+
+    autofetchBtn.addEventListener('click', async () => {
+      const cr = validateCompanyRole();
+      if (!cr) return;
+
+      autofetchBtn.disabled = true;
+      autofetchBtn.textContent = 'Searching for a real posting...';
+      autofetchNote.style.display = 'block';
+      autofetchNote.textContent = 'Searching the web and extracting the job description...';
+
+      try {
+        const params = new URLSearchParams(cr);
+        const res = await fetch('/api/find-job-description?' + params.toString());
+        const data = await res.json();
+
+        if (!res.ok) {
+          autofetchNote.textContent = '⚠ Could not auto-fetch: ' + (data.detail || JSON.stringify(data)) + ' — you can paste it manually instead.';
+          return;
+        }
+
+        jdTextarea.value = data.job_description;
+        const cacheTag = data.from_cache ? ` (cached, ${data.cached_age_hours}h old)` : ' (freshly fetched)';
+        autofetchNote.innerHTML = `✓ Pulled from <a href="${data.source_url}" target="_blank">${data.source_title || data.source_url}</a>${cacheTag}. ${data.note} <strong>Review it below before using it.</strong>`;
+      } catch (err) {
+        autofetchNote.textContent = 'Request failed: ' + err;
+      } finally {
+        autofetchBtn.disabled = false;
+        autofetchBtn.textContent = '🔍 Auto-fetch from company + role above';
+      }
+    });
+
+    // ---------- Research Company ----------
+    researchBtn.addEventListener('click', async () => {
+      const cr = validateCompanyRole();
+      if (!cr) return;
+
+      hideAllResults();
+      researchBtn.disabled = true;
+      researchBtn.textContent = 'Researching...';
+      researchResultDiv.style.display = 'block';
+      researchResultDiv.textContent = 'Searching the web, then asking Groq to summarize...';
+
+      try {
+        const params = new URLSearchParams(cr);
+        const res = await fetch('/api/research?' + params.toString());
+        const data = await res.json();
+
+        if (!res.ok) {
+          researchResultDiv.textContent = 'Error: ' + (data.detail || JSON.stringify(data));
+          return;
+        }
+
+        const cacheLine = data.from_cache
+          ? `<p><em>Served from cache (${data.cached_age_hours}h old)</em></p>`
+          : `<p><em>Freshly researched</em></p>`;
+
+        researchResultDiv.innerHTML = `
           ${cacheLine}
           <p><strong>Confidence:</strong> ${data.confidence}</p>
           <p><strong>Overview:</strong> ${data.company_overview}</p>
           <p><strong>Role expectations:</strong></p>
-          <ul>${data.role_expectations.map((x) => `<li>${x}</li>`).join("")}</ul>
+          <ul>${data.role_expectations.map(x => `<li>${x}</li>`).join('')}</ul>
           <p><strong>Interview process:</strong></p>
-          <ul>${data.interview_process.map((x) => `<li>${x}</li>`).join("")}</ul>
+          <ul>${data.interview_process.map(x => `<li>${x}</li>`).join('')}</ul>
           <p><strong>Culture notes:</strong></p>
-          <ul>${data.culture_notes.map((x) => `<li>${x}</li>`).join("")}</ul>
+          <ul>${data.culture_notes.map(x => `<li>${x}</li>`).join('')}</ul>
           <p><strong>Sources:</strong></p>
-          <ol>${data.sources.map((s) => `<li><a href="${s.url}" target="_blank">${s.title}</a></li>`).join("")}</ol>
+          <ol>${data.sources.map(s => `<li><a href="${s.url}" target="_blank">${s.title}</a></li>`).join('')}</ol>
         `;
-        } catch (err) {
-          researchResultDiv.textContent = "Request failed: " + err;
-        } finally {
-          button.disabled = false;
-          button.textContent = "Research";
-        }
-      });
-
-      // ---------- Steps 1 & 3: shared form, two actions ----------
-      const applicationForm = document.getElementById("applicationForm");
-      const matchResultDiv = document.getElementById("matchResult");
-      const generateResultDiv = document.getElementById("generateResult");
-      const scoreBtn = document.getElementById("scoreBtn");
-      const generateBtn = document.getElementById("generateBtn");
-
-      function validateSharedFields() {
-        const jd = applicationForm.job_description.value.trim();
-        if (jd.length < 20) {
-          alert(
-            "Please paste a job description (at least a couple sentences).",
-          );
-          return false;
-        }
-        const hasFile = applicationForm.resume_file.files.length > 0;
-        const hasPasted =
-          applicationForm.pasted_resume_text.value.trim().length > 0;
-        if (!hasFile && !hasPasted) {
-          alert("Please upload a resume file or paste resume text.");
-          return false;
-        }
-        return true;
+      } catch (err) {
+        researchResultDiv.textContent = 'Request failed: ' + err;
+      } finally {
+        researchBtn.disabled = false;
+        researchBtn.textContent = 'Research Company';
       }
+    });
 
-      scoreBtn.addEventListener("click", async () => {
-        if (!validateSharedFields()) return;
+    // ---------- Get Match Score ----------
+    scoreBtn.addEventListener('click', async () => {
+      if (!validateResumeAndJd()) return;
 
-        // Hide the other result panel so only one is visible at a time
-        generateResultDiv.style.display = "none";
+      hideAllResults();
+      scoreBtn.disabled = true;
+      scoreBtn.textContent = 'Scoring...';
+      matchResultDiv.style.display = 'block';
+      matchResultDiv.textContent = 'Contacting Groq...';
 
-        scoreBtn.disabled = true;
-        scoreBtn.textContent = "Scoring...";
-        matchResultDiv.style.display = "block";
-        matchResultDiv.textContent = "Contacting Groq...";
+      try {
+        const formData = new FormData(mainForm);
+        const res = await fetch('/api/match', { method: 'POST', body: formData });
+        const data = await res.json();
 
-        try {
-          const formData = new FormData(applicationForm);
-          const res = await fetch("/api/match", {
-            method: "POST",
-            body: formData,
-          });
-          const data = await res.json();
+        if (!res.ok) {
+          matchResultDiv.textContent = 'Error: ' + (data.detail || JSON.stringify(data));
+          return;
+        }
 
-          if (!res.ok) {
-            matchResultDiv.textContent =
-              "Error: " + (data.detail || JSON.stringify(data));
-            return;
-          }
-
-          matchResultDiv.innerHTML = `
+        matchResultDiv.innerHTML = `
           <div class="score">${data.match_score}% match</div>
           <p>${data.summary}</p>
           <p><strong>Matched:</strong><br>
-            ${data.matched_skills.map((s) => `<span class="tag matched">${s}</span>`).join("")}
+            ${data.matched_skills.map(s => `<span class="tag matched">${s}</span>`).join('')}
           </p>
           <p><strong>Missing:</strong><br>
-            ${data.missing_skills.map((s) => `<span class="tag missing">${s}</span>`).join("")}
+            ${data.missing_skills.map(s => `<span class="tag missing">${s}</span>`).join('')}
           </p>
           <p><strong>ATS warnings:</strong><br>
-            ${data.ats_warnings.map((s) => `<span class="tag warn">${s}</span>`).join("") || "None"}
+            ${data.ats_warnings.map(s => `<span class="tag warn">${s}</span>`).join('') || 'None'}
           </p>
         `;
-        } catch (err) {
-          matchResultDiv.textContent = "Request failed: " + err;
-        } finally {
-          scoreBtn.disabled = false;
-          scoreBtn.textContent = "Get Match Score";
+      } catch (err) {
+        matchResultDiv.textContent = 'Request failed: ' + err;
+      } finally {
+        scoreBtn.disabled = false;
+        scoreBtn.textContent = 'Get Match Score';
+      }
+    });
+
+    // ---------- Generate Cover Letter ----------
+    generateBtn.addEventListener('click', async () => {
+      if (!validateResumeAndJd()) return;
+
+      hideAllResults();
+      generateBtn.disabled = true;
+      generateBtn.textContent = 'Writing...';
+      generateResultDiv.style.display = 'block';
+      generateResultDiv.textContent = 'Scoring resume, then drafting your cover letter...';
+
+      try {
+        const formData = new FormData(mainForm);
+        const res = await fetch('/api/generate', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (!res.ok) {
+          generateResultDiv.textContent = 'Error: ' + (data.detail || JSON.stringify(data));
+          return;
         }
-      });
 
-      generateBtn.addEventListener("click", async () => {
-        if (!validateSharedFields()) return;
+        const researchLine = data.used_company_research
+          ? '<p><em>✓ Used cached company research in this letter</em></p>'
+          : '<p><em>No cached company research used (click Research Company above first if you want that)</em></p>';
 
-        matchResultDiv.style.display = "none";
-
-        generateBtn.disabled = true;
-        generateBtn.textContent = "Writing...";
-        generateResultDiv.style.display = "block";
-        generateResultDiv.textContent =
-          "Scoring resume, then drafting your cover letter...";
-
-        try {
-          const formData = new FormData(applicationForm);
-          const res = await fetch("/api/generate", {
-            method: "POST",
-            body: formData,
-          });
-          const data = await res.json();
-
-          if (!res.ok) {
-            generateResultDiv.textContent =
-              "Error: " + (data.detail || JSON.stringify(data));
-            return;
-          }
-
-          const researchLine = data.used_company_research
-            ? "<p><em>✓ Used cached company research in this letter</em></p>"
-            : "<p><em>No cached company research used (search it above first if you want that)</em></p>";
-
-          generateResultDiv.innerHTML = `
+        generateResultDiv.innerHTML = `
           <p><strong>Match score:</strong> ${data.match_score}%</p>
           ${researchLine}
           <p><strong>Cover Letter:</strong></p>
           <div style="background:#fff;padding:12px;border-radius:6px;white-space:pre-wrap;">${data.cover_letter}</div>
           <p><strong>Resume bullets to add/swap in:</strong></p>
-          <ul>${data.resume_bullets.map((b) => `<li>${b}</li>`).join("")}</ul>
+          <ul>${data.resume_bullets.map(b => `<li>${b}</li>`).join('')}</ul>
           <p><strong>How gaps were handled:</strong> ${data.gaps_addressed_honestly}</p>
           <p><strong>Talking points for the interview:</strong></p>
-          <ul>${data.talking_points.map((t) => `<li>${t}</li>`).join("")}</ul>
+          <ul>${data.talking_points.map(t => `<li>${t}</li>`).join('')}</ul>
         `;
-        } catch (err) {
-          generateResultDiv.textContent = "Request failed: " + err;
-        } finally {
-          generateBtn.disabled = false;
-          generateBtn.textContent = "Generate Cover Letter";
-        }
-      });
-    </script>
-  </body>
+      } catch (err) {
+        generateResultDiv.textContent = 'Request failed: ' + err;
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate Cover Letter';
+      }
+    });
+  </script>
+</body>
 </html>

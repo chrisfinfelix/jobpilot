@@ -5,9 +5,14 @@ A simple file-based cache so we don't re-research the same company/role
 for every single user. Uses SQLite (a single local file, zero setup,
 zero cost) instead of Redis — same idea, simpler infrastructure.
 
-Cache key = normalized "company|role". Entries expire after CACHE_TTL_DAYS
-(default 7, matching the original design doc: "company info doesn't change
-every day, so cache it for about a week").
+Cache key = normalized "namespace|company|role". Entries expire after
+CACHE_TTL_DAYS (default 7, matching the original design doc: "company
+info doesn't change every day, so cache it for about a week").
+
+The `namespace` argument keeps different kinds of cached data separate
+under the same company+role — e.g. "research" (Step 2's company/culture
+summary) and "jobdesc" (Step 4.5's fetched job posting) never collide,
+even though they're both keyed by the same company/role pair.
 """
 
 import sqlite3
@@ -45,17 +50,17 @@ def init_db():
         conn.commit()
 
 
-def _make_key(company: str, role: str) -> str:
+def _make_key(company: str, role: str, namespace: str = "research") -> str:
     """Normalize so 'Google'/'google '/'GOOGLE' all hit the same cache entry."""
-    return f"{company.strip().lower()}|{role.strip().lower()}"
+    return f"{namespace}|{company.strip().lower()}|{role.strip().lower()}"
 
 
-def get_cached_research(company: str, role: str) -> dict | None:
+def get_cached_research(company: str, role: str, namespace: str = "research") -> dict | None:
     """
-    Returns the cached research dict if a fresh (< 7 day old) entry exists,
-    otherwise returns None (meaning: go fetch it fresh).
+    Returns the cached dict if a fresh (< 7 day old) entry exists for this
+    company/role/namespace, otherwise returns None (meaning: go fetch it fresh).
     """
-    key = _make_key(company, role)
+    key = _make_key(company, role, namespace)
     with _connect() as conn:
         row = conn.execute(
             "SELECT data_json, fetched_at FROM research_cache WHERE cache_key = ?",
@@ -76,9 +81,9 @@ def get_cached_research(company: str, role: str) -> dict | None:
     return result
 
 
-def set_cached_research(company: str, role: str, data: dict) -> None:
-    """Store (or overwrite) the research result for this company/role."""
-    key = _make_key(company, role)
+def set_cached_research(company: str, role: str, data: dict, namespace: str = "research") -> None:
+    """Store (or overwrite) the cached result for this company/role/namespace."""
+    key = _make_key(company, role, namespace)
     # Don't persist the meta fields we add on read
     clean_data = {k: v for k, v in data.items() if not k.startswith("_")}
 

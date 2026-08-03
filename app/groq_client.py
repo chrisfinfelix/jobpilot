@@ -1,9 +1,17 @@
 """
 groq_client.py
 ---------------
-Wraps calls to the Groq API. For Step 1, we use it for exactly one job:
-compare a resume against a job description and return a structured
-match score + missing skills + ATS warnings.
+Wraps calls to the Groq API. For Step 1, we use it for one job: compare
+a resume against a job description and return a structured match score,
+missing skills, keyword-alignment ATS warnings, and a summary.
+
+Step 4 note: this prompt's ats_warnings is scoped to KEYWORD ALIGNMENT
+only (does the resume use the terms this specific JD uses) — the fuzzy
+judgment call that actually needs a model. Structural ATS issues (missing
+section headers, table layouts, no contact info, scanned PDFs, etc.) are
+deterministic and checked separately in resume_parser.py, since those are
+objectively true/false and don't need an LLM to guess at. main.py merges
+both lists before returning the response.
 
 We ask the model to return ONLY JSON (no preamble) so we can parse it
 reliably, and we validate the shape before trusting it.
@@ -25,7 +33,7 @@ fences, no commentary, no preamble. The JSON must exactly match this shape:
   "match_score": <integer 0-100>,
   "matched_skills": [<strings: skills/requirements the resume DOES cover>],
   "missing_skills": [<strings: skills/requirements from the JD the resume does NOT show>],
-  "ats_warnings": [<strings: formatting/keyword issues that could hurt an ATS scan>],
+  "ats_warnings": [<strings: KEYWORD ALIGNMENT issues only — see rules below>],
   "summary": "<one or two sentence honest summary of the fit>"
 }
 
@@ -33,8 +41,15 @@ Rules:
 - Be honest and specific. Do not inflate the score to be encouraging.
 - match_score should reflect real overlap between resume content and JD requirements.
 - missing_skills should only list things genuinely absent or unclear in the resume.
-- ats_warnings should flag things like: missing keywords from the JD title,
-  no quantified achievements, unusual section headers, etc. Keep it to 0-5 items.
+- ats_warnings is SCOPED TO KEYWORD ALIGNMENT ONLY. Do not comment on formatting,
+  layout, section headers, tables, images, or file type — those are checked
+  separately by a different system. Only flag things like: the JD's exact job
+  title or key terms not appearing anywhere in the resume, an important
+  JD-specific keyword/tool/technology missing from the resume text, or the
+  resume using different terminology than the JD for the same thing (e.g. JD
+  says "React.js", resume only says "front-end frameworks"). Keep it to 0-4 items.
+- If there are no real keyword-alignment issues, return an empty list — do not
+  invent minor items just to fill the list.
 - If the resume is clearly unrelated to the job, say so honestly in the summary
   and give a low score.
 """
