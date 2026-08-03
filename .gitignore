@@ -1,6 +1,9 @@
 # Environment variables (contains your real Groq API key — never commit this)
 .env
 
+# Research cache database (local, per-machine, regenerated automatically)
+research_cache.db
+
 # Python
 venv/
 __pycache__/
