@@ -16,6 +16,11 @@ Endpoints:
   GET  /api/research             -> research a company/role with cited AI summary.
   GET  /api/find-job-description -> auto-fetch a real job posting for a company/role,
                                      to pre-fill the job description field.
+  GET  /api/find-contact-email   -> best-effort lookup of a real application contact
+                                     email for a company; falls back to labeled,
+                                     unverified pattern guesses if none is found. See
+                                     app/contact_finder.py for why this is stricter
+                                     than the job-description fetcher.
   POST /api/generate             -> generate a tailored cover letter + resume bullets,
                                      using the match gaps and (if cached) company research.
   GET  /api/companies            -> bundled list of company names for the picker.
@@ -56,6 +61,7 @@ from app.web_research import gather_research, WebResearchError
 from app.rag_summarizer import summarize_research, SummarizerError
 from app.application_writer import generate_application_materials, ApplicationWriterError
 from app.job_finder import find_job_description, JobFinderError
+from app.contact_finder import find_contact_email, ContactFinderError
 from app import gmail_client
 
 app = FastAPI(title="JobPilot API", version="0.3.0")
@@ -240,6 +246,46 @@ def find_job_description_endpoint(company: str, role: str, force_refresh: bool =
     set_cached_research(company, role, result, namespace="jobdesc")
 
     return JobDescriptionResult(**result, from_cache=False)
+
+
+@app.get("/api/find-contact-email")
+def find_contact_email_endpoint(company: str, force_refresh: bool = False):
+    """
+    Best-effort lookup of a real application contact email for a company.
+
+    Unlike /api/find-job-description, this can legitimately come back
+    empty or as unverified guesses for most companies — many only accept
+    applications through an ATS portal, not email. The response always
+    includes a `tier` field ("verified" | "guess" | "none") so the
+    frontend can label the result honestly instead of presenting a guess
+    as if it were a confirmed address. See app/contact_finder.py.
+
+    Cached for 7 days per company (role doesn't apply here, so we reuse
+    the existing research cache table under a "contact" namespace with a
+    fixed sentinel role value, same mechanism as the "jobdesc" namespace).
+
+    Query params:
+      company        e.g. "Google"
+      force_refresh   bypass the cache and re-search (default false)
+    """
+    if not company or not company.strip():
+        raise HTTPException(status_code=400, detail="Company name is required.")
+
+    CONTACT_CACHE_ROLE_KEY = "_contact_lookup_"  # sentinel: this cache entry isn't role-specific
+
+    if not force_refresh:
+        cached = get_cached_research(company, CONTACT_CACHE_ROLE_KEY, namespace="contact")
+        if cached is not None:
+            return {**cached, "from_cache": True, "cached_age_hours": cached.get("_cached_age_hours")}
+
+    try:
+        result = find_contact_email(company)
+    except ContactFinderError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    set_cached_research(company, CONTACT_CACHE_ROLE_KEY, result, namespace="contact")
+
+    return {**result, "from_cache": False}
 
 
 @app.post("/api/generate", response_model=GenerationResult)

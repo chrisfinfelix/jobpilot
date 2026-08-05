@@ -229,6 +229,29 @@
         margin-top: 10px;
         font-size: 0.85rem;
       }
+      #contactFindResult .verified {
+        color: #1a7a3c;
+      }
+      #contactFindResult .guess-note {
+        color: #8a5a00;
+        margin-bottom: 4px;
+      }
+      #contactFindResult .none-note {
+        color: #888;
+      }
+      .guess-chip {
+        display: inline-block;
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 14px;
+        padding: 3px 10px;
+        margin: 2px 4px 2px 0;
+        cursor: pointer;
+        font-size: 0.8rem;
+      }
+      .guess-chip:hover {
+        background: #e2e2e2;
+      }
     </style>
   </head>
   <body>
@@ -347,6 +370,19 @@
 
         <label>To</label>
         <input type="email" id="sendTo" placeholder="hiring-team@company.com" />
+        <div style="margin-top: 6px">
+          <button
+            type="button"
+            id="findContactBtn"
+            style="font-size: 0.8rem; padding: 4px 10px"
+          >
+            Find contact email
+          </button>
+        </div>
+        <div
+          id="contactFindResult"
+          style="margin-top: 6px; font-size: 0.82rem"
+        ></div>
 
         <label>Subject</label>
         <input type="text" id="sendSubject" />
@@ -792,12 +828,71 @@
           : "(none — no resume file was uploaded; pasted text can't be attached)";
 
         document.getElementById("sendStatusMsg").textContent = "";
+        document.getElementById("contactFindResult").innerHTML = "";
         sendModal.style.display = "block";
       }
 
       document.getElementById("sendCancelBtn").addEventListener("click", () => {
         sendModal.style.display = "none";
       });
+
+      // Best-effort contact email lookup. Always labels the result by tier —
+      // a "guess" is shown as clickable unverified chips, never silently
+      // filled into the To field the way a "verified" result is.
+      document
+        .getElementById("findContactBtn")
+        .addEventListener("click", async () => {
+          const resultDiv = document.getElementById("contactFindResult");
+          const btn = document.getElementById("findContactBtn");
+          if (!lastGeneratedData || !lastGeneratedData.company) {
+            resultDiv.innerHTML =
+              '<span class="none-note">No company set — pick one in the form above first.</span>';
+            return;
+          }
+
+          btn.disabled = true;
+          resultDiv.textContent = "Searching…";
+
+          try {
+            const res = await fetch(
+              "/api/find-contact-email?company=" +
+                encodeURIComponent(lastGeneratedData.company),
+            );
+            const data = await res.json();
+
+            if (!res.ok) {
+              resultDiv.innerHTML =
+                '<span class="none-note">Lookup failed: ' +
+                (data.detail || "unknown error") +
+                "</span>";
+            } else if (data.tier === "verified") {
+              document.getElementById("sendTo").value = data.email;
+              resultDiv.innerHTML = `<span class="verified">✓ Found: ${data.email}</span>
+            <div style="color:#666;">Source: <a href="${data.source_url}" target="_blank" rel="noopener">${data.source_title || data.source_url}</a> — ${data.note || ""}</div>`;
+            } else if (data.tier === "guess") {
+              const chips = data.guesses
+                .map(
+                  (g) =>
+                    `<span class="guess-chip" data-email="${g}">${g}</span>`,
+                )
+                .join("");
+              resultDiv.innerHTML = `<div class="guess-note">No verified email found. Unverified guesses — click to use, but double check:</div>${chips}
+            <div style="color:#888;margin-top:4px;">${data.note || ""}</div>`;
+              resultDiv.querySelectorAll(".guess-chip").forEach((chip) => {
+                chip.addEventListener("click", () => {
+                  document.getElementById("sendTo").value = chip.dataset.email;
+                });
+              });
+            } else {
+              resultDiv.innerHTML = `<span class="none-note">${data.note || "No contact email could be found or guessed."}</span>`;
+            }
+          } catch (err) {
+            resultDiv.innerHTML =
+              '<span class="none-note">Lookup failed: ' + err + "</span>";
+          } finally {
+            btn.disabled = false;
+          }
+        });
 
       // The only place in the app that actually triggers a send.
       document
