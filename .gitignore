@@ -21,3 +21,4 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+app/data/gmail_token.json

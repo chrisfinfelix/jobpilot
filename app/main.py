@@ -22,6 +22,17 @@ Endpoints:
   GET  /api/roles                -> bundled list of role titles for the picker.
   GET  /health                    -> simple health check.
 
+Step 5 (Gmail send flow):
+  GET  /api/gmail/auth-url       -> builds the Google OAuth consent URL.
+  GET  /api/gmail/callback       -> Google redirects here after consent; exchanges
+                                     the code for tokens and stores them locally.
+  GET  /api/gmail/status         -> whether Gmail is currently connected.
+  POST /api/gmail/disconnect     -> deletes the locally stored token.
+  POST /api/gmail/send           -> sends an email via Gmail API. Only ever called
+                                     from the frontend's review-gate modal, after the
+                                     user has seen and approved the final To/Subject/
+                                     Body/Attachment. See app/gmail_client.py.
+
 Run locally with:
   python -m uvicorn app.main:app --reload
 """
@@ -35,6 +46,7 @@ from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 
 from app.resume_parser import parse_resume, UnsupportedFileType, EmptyResumeError, check_ats_structural_issues
 from app.groq_client import score_resume_against_job, GroqClientError
@@ -44,6 +56,7 @@ from app.web_research import gather_research, WebResearchError
 from app.rag_summarizer import summarize_research, SummarizerError
 from app.application_writer import generate_application_materials, ApplicationWriterError
 from app.job_finder import find_job_description, JobFinderError
+from app import gmail_client
 
 app = FastAPI(title="JobPilot API", version="0.3.0")
 init_db()  # make sure the research_cache.db table exists before we take traffic
@@ -296,6 +309,70 @@ async def generate_application(
         used_company_research=research_context is not None,
         **generated,
     )
+
+
+@app.get("/api/gmail/auth-url")
+def gmail_auth_url():
+    """Frontend calls this, then does window.location.href = data.auth_url
+    to send the browser to Google's consent screen."""
+    try:
+        url = gmail_client.build_auth_url()
+        return {"auth_url": url}
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/gmail/callback")
+def gmail_callback(code: str, state: str):
+    """Google redirects here after the user approves/denies consent.
+    On success, redirects back to the main page with a query flag the
+    frontend checks on load to refresh its 'connected' status."""
+    try:
+        gmail_client.handle_callback(code, state)
+    except ValueError as e:
+        # bad/replayed state — send them back with an error flag instead of 500ing
+        return RedirectResponse(url="/?gmail_error=" + str(e).replace(" ", "+"))
+    except Exception as e:
+        return RedirectResponse(url="/?gmail_error=" + str(e).replace(" ", "+"))
+
+    return RedirectResponse(url="/?gmail_connected=true")
+
+
+@app.get("/api/gmail/status")
+def gmail_status():
+    return {"connected": gmail_client.is_connected()}
+
+
+@app.post("/api/gmail/disconnect")
+def gmail_disconnect():
+    gmail_client.disconnect()
+    return {"connected": False}
+
+
+@app.post("/api/gmail/send")
+async def gmail_send(
+    to: str = Form(...),
+    subject: str = Form(...),
+    body_text: str = Form(...),
+    attachment: UploadFile | None = File(default=None),
+):
+    """
+    Called ONLY from the review-gate modal's 'Confirm & Send' button —
+    every field here has already been shown to and approved by the user.
+    This endpoint does not re-generate or alter content; it just sends
+    exactly what's in the form.
+    """
+    attachments = []
+    if attachment is not None:
+        file_bytes = await attachment.read()
+        attachments.append((attachment.filename, file_bytes, attachment.content_type or "application/octet-stream"))
+
+    try:
+        result = gmail_client.send_email(to=to, subject=subject, body_text=body_text, attachments=attachments)
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return {"sent": True, "message_id": result["id"], "thread_id": result["threadId"]}
 
 
 # Serve the simple test UI at http://localhost:8000/
