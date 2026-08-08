@@ -36,7 +36,16 @@ Step 5 (Gmail send flow):
   POST /api/gmail/send           -> sends an email via Gmail API. Only ever called
                                      from the frontend's review-gate modal, after the
                                      user has seen and approved the final To/Subject/
-                                     Body/Attachment. See app/gmail_client.py.
+                                     Body/Attachment. See app/gmail_client.py. Also
+                                     auto-logs a tracker row on success (Step 6).
+
+Step 6 (application tracker):
+  GET   /api/tracker/applications        -> list logged applications, optional ?status= filter.
+  PATCH /api/tracker/applications/{id}   -> update an application's status.
+  GET   /api/tracker/stats               -> counts per status, for the dashboard header.
+  A row is only ever created automatically, right after a successful Gmail
+  send — there's no manual "log an application" path yet. See
+  app/application_tracker.py.
 
 Run locally with:
   python -m uvicorn app.main:app --reload
@@ -63,9 +72,13 @@ from app.application_writer import generate_application_materials, ApplicationWr
 from app.job_finder import find_job_description, JobFinderError
 from app.contact_finder import find_contact_email, ContactFinderError
 from app import gmail_client
+from app import application_tracker
+from app.resume_doc_builder import build_resume_docx, ResumeDocBuildError, GENERATED_RESUME_FILENAME, GENERATED_RESUME_MIME
+from pydantic import BaseModel
 
 app = FastAPI(title="JobPilot API", version="0.3.0")
 init_db()  # make sure the research_cache.db table exists before we take traffic
+application_tracker.init_tracker_db()  # Step 6 — separate applications.db, see module docstring
 
 # Load the bundled company/role lists once at startup — small static files,
 # no need to re-read from disk on every request.
@@ -401,24 +414,112 @@ async def gmail_send(
     subject: str = Form(...),
     body_text: str = Form(...),
     attachment: UploadFile | None = File(default=None),
+    pasted_resume_text: str | None = Form(default=None),
+    company: str | None = Form(default=None),
+    role: str | None = Form(default=None),
+    match_score: int | None = Form(default=None),
 ):
     """
     Called ONLY from the review-gate modal's 'Confirm & Send' button —
     every field here has already been shown to and approved by the user.
     This endpoint does not re-generate or alter content; it just sends
     exactly what's in the form.
+
+    company/role/match_score are optional context passed through from the
+    generated result (Step 6) purely so a tracker row can be logged after
+    a successful send — they don't affect what gets sent.
+
+    Resume attachment: if the user uploaded a resume file earlier, the
+    frontend sends it here as `attachment` and it's attached as-is. If they
+    instead pasted their resume as text, there's no underlying file — the
+    frontend sends that text back as `pasted_resume_text` and we render it
+    into a plain .docx (resume_doc_builder.py) so a resume is still attached.
+    Uploaded files always take priority; pasted_resume_text is only used
+    when no file was sent. Best-effort: if doc generation fails for some
+    reason, the email still sends without an attachment rather than
+    blocking the send entirely — see `resume_attached` in the response.
     """
     attachments = []
+    resume_attached = False
+
     if attachment is not None:
         file_bytes = await attachment.read()
         attachments.append((attachment.filename, file_bytes, attachment.content_type or "application/octet-stream"))
+        resume_attached = True
+    elif pasted_resume_text and pasted_resume_text.strip():
+        try:
+            docx_bytes = build_resume_docx(pasted_resume_text)
+            attachments.append((GENERATED_RESUME_FILENAME, docx_bytes, GENERATED_RESUME_MIME))
+            resume_attached = True
+        except ResumeDocBuildError:
+            resume_attached = False  # send still proceeds without an attachment
 
     try:
         result = gmail_client.send_email(to=to, subject=subject, body_text=body_text, attachments=attachments)
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return {"sent": True, "message_id": result["id"], "thread_id": result["threadId"]}
+    # Step 6: log the application now that the email genuinely went out.
+    # Best-effort — if this fails, we don't fail the response, since the
+    # send itself already succeeded. We do surface it in the response so
+    # the frontend can tell the user their application was sent but not
+    # tracked, rather than silently losing that information.
+    logged = True
+    try:
+        application_tracker.log_application(
+            company=company or "Unknown",
+            role=role or "Unknown",
+            recipient_email=to,
+            gmail_message_id=result["id"],
+            match_score=match_score,
+            cover_letter=body_text,
+        )
+    except Exception:
+        logged = False
+
+    return {
+        "sent": True,
+        "message_id": result["id"],
+        "thread_id": result["threadId"],
+        "logged": logged,
+        "resume_attached": resume_attached,
+    }
+
+
+@app.get("/api/tracker/applications")
+def list_tracked_applications(status: str | None = None):
+    """Lists logged applications, newest first. Optional ?status= filter
+    (one of: applied, interviewing, offer, rejected, withdrawn)."""
+    if status and status not in application_tracker.VALID_STATUSES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid status '{status}'. Must be one of: {application_tracker.VALID_STATUSES}",
+        )
+    return {"applications": application_tracker.list_applications(status)}
+
+
+@app.get("/api/tracker/stats")
+def tracker_stats():
+    """Counts per status, for the dashboard header (e.g. '3 applied, 1 interviewing')."""
+    return application_tracker.get_stats()
+
+
+class StatusUpdate(BaseModel):
+    status: str
+
+
+@app.patch("/api/tracker/applications/{application_id}")
+def update_tracked_application(application_id: int, update: StatusUpdate):
+    """Moves an application to a new status (e.g. after hearing back)."""
+    try:
+        updated = application_tracker.update_status(application_id, update.status)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if not updated:
+        raise HTTPException(status_code=404, detail=f"No application with id {application_id}.")
+
+    return {"id": application_id, "status": update.status}
 
 
 # Serve the simple test UI at http://localhost:8000/

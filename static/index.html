@@ -2,108 +2,258 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>JobPilot — Test</title>
+    <title>JOBPILOT — Application Dossier</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
+      :root {
+        --paper: #f3eedf;
+        --paper-dark: #e7dfc6;
+        --ink: #141311;
+        --muted: #55503f;
+        --stamp: #b3211e;
+        --ok: #1f5c3d;
+        --warn: #a9700c;
+        --shadow-lg: 5px 5px 0 var(--ink);
+        --shadow-sm: 3px 3px 0 var(--ink);
+        --mono: "Space Mono", "Courier New", monospace;
+        --sans: "IBM Plex Sans", system-ui, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: system-ui, sans-serif;
-        max-width: 640px;
-        margin: 40px auto;
-        padding: 0 16px;
-        color: #1a1a1a;
+        font-family: var(--sans);
+        max-width: 760px;
+        margin: 32px auto 80px;
+        padding: 0 18px;
+        color: var(--ink);
+        background: var(--paper);
+        line-height: 1.5;
+      }
+
+      ::selection {
+        background: var(--ink);
+        color: var(--paper);
+      }
+
+      :focus-visible {
+        outline: 2px dashed var(--stamp);
+        outline-offset: 2px;
+      }
+
+      /* ---------- Masthead ---------- */
+      .masthead {
+        border-bottom: 3px solid var(--ink);
+        padding-bottom: 14px;
+        margin-bottom: 6px;
+      }
+      .kicker {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
       }
       h1 {
-        font-size: 1.4rem;
+        font-family: var(--mono);
+        font-size: 1.9rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        margin: 4px 0 0;
+      }
+      .masthead p {
+        font-size: 0.9rem;
+        color: var(--muted);
+        max-width: 56ch;
+        margin: 10px 0 0;
       }
       h2 {
-        font-size: 1.1rem;
+        font-family: var(--mono);
+        font-size: 1rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
       }
+
+      /* ---------- Form fields ---------- */
       label {
         display: block;
-        margin-top: 16px;
-        font-weight: 600;
-        font-size: 0.9rem;
+        margin-top: 18px;
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: 0.76rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
       }
       textarea,
       input[type="file"],
-      input[type="text"] {
+      input[type="text"],
+      input[type="email"],
+      select {
         width: 100%;
         margin-top: 6px;
         box-sizing: border-box;
-        padding: 8px;
+        padding: 10px;
+        font: inherit;
+        font-family: var(--sans);
+        background: #fff;
+        border: 2px solid var(--ink);
+        border-radius: 0;
+        color: var(--ink);
       }
       textarea {
         min-height: 120px;
-        font-family: inherit;
+        font-family: var(--sans);
+        resize: vertical;
       }
-      input[type="text"] {
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        font: inherit;
+      input[type="file"] {
+        padding: 8px;
+        cursor: pointer;
       }
+      textarea:focus,
+      input:focus,
+      select:focus {
+        outline: none;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+
       .btn-row {
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
       }
+
+      /* ---------- Buttons: physical, pressable ---------- */
       button {
         margin-top: 20px;
         padding: 10px 18px;
-        background: #111;
-        color: #fff;
-        border: none;
-        border-radius: 6px;
+        background: var(--ink);
+        color: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 0;
         cursor: pointer;
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        box-shadow: var(--shadow-sm);
+      }
+      button:hover:not(:disabled) {
+        background: #2a2822;
+      }
+      button:active:not(:disabled) {
+        transform: translate(3px, 3px);
+        box-shadow: 0 0 0 var(--ink);
       }
       button.secondary {
-        background: #2f5496;
+        background: var(--stamp);
+        border-color: var(--stamp);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      button.secondary:hover:not(:disabled) {
+        background: #931b19;
       }
       button.tertiary {
-        background: #6b6b6b;
+        background: var(--paper);
+        color: var(--ink);
+        border-color: var(--ink);
+      }
+      button.tertiary:hover:not(:disabled) {
+        background: var(--paper-dark);
       }
       button:disabled {
-        opacity: 0.5;
+        opacity: 0.45;
         cursor: default;
+        transform: none;
+        box-shadow: var(--shadow-sm);
       }
+      @media (prefers-reduced-motion: reduce) {
+        button {
+          transition: none !important;
+        }
+      }
+
+      /* ---------- Result panels ---------- */
       #matchResult,
       #generateResult,
       #researchResult {
-        margin-top: 16px;
+        margin-top: 18px;
         white-space: pre-wrap;
-        padding: 16px;
-        border-radius: 8px;
+        padding: 18px;
+        border: 2px solid var(--ink);
+        box-shadow: var(--shadow-lg);
+        background: #fff;
         display: none;
       }
       #matchResult {
-        background: #f5f5f5;
+        background: #fff;
       }
       #generateResult {
-        background: #f0fbe8;
+        background: #fff;
+        border-color: var(--ok);
+        box-shadow: 5px 5px 0 var(--ok);
       }
       #researchResult {
-        background: #eef;
+        background: #fff;
       }
-      .score {
-        font-size: 2rem;
-        font-weight: 700;
+      #matchResult p,
+      #generateResult p,
+      #researchResult p {
+        margin: 10px 0;
       }
-      .tag {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        margin: 2px;
-      }
-      .matched {
-        background: #d4f4dd;
-      }
-      .missing {
-        background: #fde2e2;
-      }
-      .warn {
-        background: #fff3cd;
+      #matchResult a,
+      #generateResult a,
+      #researchResult a {
+        color: var(--stamp);
       }
 
-      /* Searchable combobox (company / role picker) */
+      /* Signature element: the match score as an ink stamp */
+      .score {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--stamp);
+        border: 3px solid var(--stamp);
+        padding: 8px 18px;
+        transform: rotate(-3deg);
+        margin-bottom: 6px;
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 3px 10px;
+        border: 2px solid var(--ink);
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        margin: 3px 4px 3px 0;
+        background: var(--paper);
+      }
+      .matched {
+        border-color: var(--ok);
+        color: var(--ok);
+      }
+      .missing {
+        border-color: var(--stamp);
+        color: var(--stamp);
+      }
+      .warn {
+        border-color: var(--warn);
+        color: var(--warn);
+      }
+
+      /* ---------- Searchable combobox (company / role picker) ---------- */
       .combo {
         position: relative;
         margin-top: 6px;
@@ -114,23 +264,28 @@
       }
       .combo-input {
         flex: 1;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 6px 0 0 6px;
+        padding: 10px;
+        border: 2px solid var(--ink);
+        border-radius: 0;
         box-sizing: border-box;
         font: inherit;
+        font-family: var(--sans);
+        background: #fff;
       }
       .combo-toggle {
-        padding: 8px 12px;
-        border: 1px solid #ccc;
+        margin-top: 0;
+        padding: 8px 14px;
+        border: 2px solid var(--ink);
         border-left: none;
-        border-radius: 0 6px 6px 0;
-        background: #f0f0f0;
+        border-radius: 0;
+        background: var(--ink);
+        color: var(--paper);
         cursor: pointer;
         font-size: 0.8rem;
+        box-shadow: none;
       }
       .combo-toggle:hover {
-        background: #e4e4e4;
+        background: #2a2822;
       }
       .combo-list {
         position: absolute;
@@ -141,10 +296,9 @@
         max-height: 220px;
         overflow-y: auto;
         background: #fff;
-        border: 1px solid #ccc;
+        border: 2px solid var(--ink);
         border-top: none;
-        border-radius: 0 0 6px 6px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        box-shadow: var(--shadow-sm);
         display: none;
       }
       .combo-list.open {
@@ -154,67 +308,79 @@
         padding: 8px 10px;
         cursor: pointer;
         font-size: 0.92rem;
+        border-bottom: 1px solid var(--paper-dark);
       }
       .combo-option:hover,
       .combo-option.active {
-        background: #eef;
+        background: var(--paper-dark);
       }
       .combo-empty {
         padding: 8px 10px;
-        color: #888;
+        color: var(--muted);
         font-size: 0.88rem;
         font-style: italic;
       }
 
-      /* Step 5: Gmail connect + send review modal */
+      /* ---------- Gmail status bar ---------- */
       #gmailStatus {
-        font-size: 0.85rem;
-        color: #444;
-        margin-top: 4px;
+        font-family: var(--mono);
+        font-size: 0.76rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-top: 10px;
       }
       #gmailStatus button {
         margin-top: 0;
         margin-left: 8px;
         padding: 4px 10px;
-        font-size: 0.8rem;
+        font-size: 0.7rem;
+        box-shadow: 2px 2px 0 var(--ink);
       }
       #sendViaGmailBtn {
-        background: #2f5496;
+        background: var(--stamp);
+        border-color: var(--stamp);
       }
+
+      /* ---------- Send modal: the authorization dossier ---------- */
       #sendModal {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.45);
+        background: rgba(20, 19, 17, 0.6);
         z-index: 1000;
       }
       #sendModal .modal-box {
-        background: #fff;
+        background: var(--paper);
         max-width: 560px;
+        width: 92vw;
         margin: 5vh auto;
-        padding: 24px;
-        border-radius: 8px;
+        padding: 26px;
+        border: 3px solid var(--stamp);
+        box-shadow: 6px 6px 0 var(--ink);
         max-height: 88vh;
         overflow: auto;
       }
+      #sendModal h2 {
+        margin-top: 0;
+      }
+      #sendModal .modal-note {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
       #sendModal label {
-        margin-top: 12px;
+        margin-top: 14px;
       }
       #sendModal textarea,
       #sendModal input[type="email"] {
         width: 100%;
         margin-top: 6px;
-        box-sizing: border-box;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        font: inherit;
       }
       #sendModal textarea {
         min-height: 200px;
       }
       #sendModal .modal-actions {
-        margin-top: 20px;
+        margin-top: 22px;
         display: flex;
         gap: 10px;
         justify-content: flex-end;
@@ -223,43 +389,171 @@
         margin-top: 0;
       }
       #sendModal #sendCancelBtn {
-        background: #6b6b6b;
+        background: var(--paper);
+        color: var(--ink);
+      }
+      #sendModal #findContactBtn {
+        font-size: 0.7rem;
+        padding: 5px 10px;
+        margin-top: 0;
       }
       #sendStatusMsg {
-        margin-top: 10px;
-        font-size: 0.85rem;
+        margin-top: 12px;
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+      .attachment-line {
+        margin-top: 14px;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+      #contactFindResult {
+        margin-top: 6px;
+        font-size: 0.82rem;
       }
       #contactFindResult .verified {
-        color: #1a7a3c;
+        color: var(--ok);
+        font-weight: 600;
       }
       #contactFindResult .guess-note {
-        color: #8a5a00;
+        color: var(--warn);
         margin-bottom: 4px;
       }
       #contactFindResult .none-note {
-        color: #888;
+        color: var(--muted);
       }
       .guess-chip {
         display: inline-block;
-        background: #f0f0f0;
-        border: 1px solid #ccc;
-        border-radius: 14px;
+        background: var(--paper);
+        border: 2px solid var(--ink);
         padding: 3px 10px;
         margin: 2px 4px 2px 0;
         cursor: pointer;
-        font-size: 0.8rem;
+        font-family: var(--mono);
+        font-size: 0.74rem;
       }
       .guess-chip:hover {
-        background: #e2e2e2;
+        background: var(--paper-dark);
+      }
+
+      /* ---------- Folder-tab navigation ---------- */
+      .tab-nav {
+        margin: 18px 0 0;
+        display: flex;
+        gap: 4px;
+        border-bottom: 3px solid var(--ink);
+      }
+      .tab-btn {
+        background: var(--paper-dark);
+        border: 2px solid var(--ink);
+        border-bottom: none;
+        padding: 9px 20px;
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        cursor: pointer;
+        color: var(--muted);
+        margin-bottom: -3px;
+        box-shadow: none;
+      }
+      .tab-btn.active {
+        background: var(--paper);
+        color: var(--ink);
+        font-weight: 700;
+        border-bottom: 3px solid var(--paper);
+      }
+      .tab-panel {
+        display: none;
+        padding-top: 22px;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      /* ---------- Tracker ledger ---------- */
+      #trackerStats {
+        margin-bottom: 14px;
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        letter-spacing: 0.02em;
+        color: var(--muted);
+      }
+      .tracker-controls {
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .tracker-controls label {
+        margin-top: 0;
+      }
+      .tracker-controls select {
+        width: auto;
+        margin-top: 0;
+      }
+      .tracker-controls button {
+        margin-top: 0;
+      }
+      #trackerTable {
+        width: 100%;
+        border-collapse: collapse;
+        border: 2px solid var(--ink);
+        background: #fff;
+      }
+      #trackerTable thead tr {
+        text-align: left;
+        border-bottom: 3px solid var(--ink);
+        background: var(--paper-dark);
+      }
+      #trackerTable th {
+        padding: 8px;
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      #trackerTable td {
+        padding: 8px;
+        border-bottom: 1px solid var(--paper-dark);
+        font-size: 0.88rem;
+      }
+      #trackerTable select.status-select {
+        width: auto;
+        padding: 4px 6px;
+        margin-top: 0;
+        font-family: var(--sans);
+      }
+
+      @media (max-width: 520px) {
+        body {
+          margin: 20px auto 60px;
+        }
+        h1 {
+          font-size: 1.5rem;
+        }
+        .tab-btn {
+          padding: 8px 14px;
+          font-size: 0.7rem;
+        }
+        #sendModal .modal-box {
+          padding: 18px;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>JobPilot — Test</h1>
-    <p>
-      Fill this in once. Pick whichever action(s) you want below — they all
-      share the same company/role/job description/resume.
-    </p>
+    <div class="masthead">
+      <div class="kicker">Application Dossier System</div>
+      <h1>JobPilot</h1>
+      <p>
+        Fill this in once. Pick whichever action(s) you want below — they all
+        share the same company/role/job description/resume.
+      </p>
+    </div>
 
     <div id="gmailStatus">
       <span id="gmailStatusText">Checking Gmail connection…</span>
@@ -271,118 +565,163 @@
       </button>
     </div>
 
-    <form id="mainForm">
-      <label>Company</label>
-      <div class="combo" data-combo="company">
-        <div class="combo-input-row">
-          <input
-            type="text"
-            class="combo-input"
-            name="company"
-            placeholder="Type to search, or click ▾"
-            autocomplete="off"
-          />
+    <!-- Step 6: simple tab nav — Apply is everything that existed before, Tracker is new -->
+    <div class="tab-nav">
+      <button type="button" class="tab-btn active" data-tab="applyTab">
+        Apply
+      </button>
+      <button type="button" class="tab-btn" data-tab="trackerTab">
+        Tracker
+      </button>
+    </div>
+
+    <div id="applyTab" class="tab-panel active">
+      <form id="mainForm">
+        <label>Company</label>
+        <div class="combo" data-combo="company">
+          <div class="combo-input-row">
+            <input
+              type="text"
+              class="combo-input"
+              name="company"
+              placeholder="Type to search, or click ▾"
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="combo-toggle"
+              aria-label="Show all companies"
+            >
+              ▾
+            </button>
+          </div>
+          <div class="combo-list"></div>
+        </div>
+
+        <label>Role</label>
+        <div class="combo" data-combo="role">
+          <div class="combo-input-row">
+            <input
+              type="text"
+              class="combo-input"
+              name="role"
+              placeholder="Type to search, or click ▾"
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="combo-toggle"
+              aria-label="Show all roles"
+            >
+              ▾
+            </button>
+          </div>
+          <div class="combo-list"></div>
+        </div>
+
+        <label>Job description</label>
+        <div class="btn-row" style="margin-top: 6px">
           <button
             type="button"
-            class="combo-toggle"
-            aria-label="Show all companies"
+            id="autofetchJdBtn"
+            class="secondary"
+            style="margin-top: 0; font-size: 0.85rem; padding: 6px 12px"
           >
-            ▾
+            🔍 Auto-fetch from company + role above
           </button>
         </div>
-        <div class="combo-list"></div>
-      </div>
+        <textarea
+          name="job_description"
+          placeholder="Paste the job description here, or use Auto-fetch above..."
+          style="margin-top: 8px"
+        ></textarea>
+        <p
+          id="autofetchNote"
+          style="
+            font-family: var(--mono);
+            font-size: 0.78rem;
+            color: var(--muted);
+            display: none;
+            margin-top: 6px;
+          "
+        ></p>
 
-      <label>Role</label>
-      <div class="combo" data-combo="role">
-        <div class="combo-input-row">
-          <input
-            type="text"
-            class="combo-input"
-            name="role"
-            placeholder="Type to search, or click ▾"
-            autocomplete="off"
-          />
-          <button
-            type="button"
-            class="combo-toggle"
-            aria-label="Show all roles"
-          >
-            ▾
+        <label>Resume file (PDF, DOCX, or TXT)</label>
+        <input type="file" name="resume_file" accept=".pdf,.docx,.txt" />
+
+        <label>...or paste resume text instead</label>
+        <textarea
+          name="pasted_resume_text"
+          placeholder="Paste resume text here if not uploading a file..."
+        ></textarea>
+
+        <div class="btn-row">
+          <button type="button" id="researchBtn" class="tertiary">
+            Research Company
+          </button>
+          <button type="button" id="scoreBtn">Get Match Score</button>
+          <button type="button" id="generateBtn" class="secondary">
+            Generate Cover Letter
           </button>
         </div>
-        <div class="combo-list"></div>
+      </form>
+
+      <div id="researchResult"></div>
+      <div id="matchResult"></div>
+      <div id="generateResult"></div>
+    </div>
+    <!-- /applyTab -->
+
+    <div id="trackerTab" class="tab-panel">
+      <div id="trackerStats">Loading stats…</div>
+      <div class="tracker-controls">
+        <label style="display: inline-block; margin-top: 0">Filter:</label>
+        <select id="trackerStatusFilter">
+          <option value="">All</option>
+          <option value="applied">Applied</option>
+          <option value="interviewing">Interviewing</option>
+          <option value="offer">Offer</option>
+          <option value="rejected">Rejected</option>
+          <option value="withdrawn">Withdrawn</option>
+        </select>
+        <button type="button" id="trackerRefreshBtn">Refresh</button>
       </div>
-
-      <label>Job description</label>
-      <div class="btn-row" style="margin-top: 6px">
-        <button
-          type="button"
-          id="autofetchJdBtn"
-          class="secondary"
-          style="margin-top: 0; font-size: 0.85rem; padding: 6px 12px"
-        >
-          🔍 Auto-fetch from company + role above
-        </button>
-      </div>
-      <textarea
-        name="job_description"
-        placeholder="Paste the job description here, or use Auto-fetch above..."
-        style="margin-top: 8px"
-      ></textarea>
-      <p
-        id="autofetchNote"
-        style="font-size: 0.82rem; color: #666; display: none; margin-top: 4px"
-      ></p>
-
-      <label>Resume file (PDF, DOCX, or TXT)</label>
-      <input type="file" name="resume_file" accept=".pdf,.docx,.txt" />
-
-      <label>...or paste resume text instead</label>
-      <textarea
-        name="pasted_resume_text"
-        placeholder="Paste resume text here if not uploading a file..."
-      ></textarea>
-
-      <div class="btn-row">
-        <button type="button" id="researchBtn" class="tertiary">
-          Research Company
-        </button>
-        <button type="button" id="scoreBtn">Get Match Score</button>
-        <button type="button" id="generateBtn" class="secondary">
-          Generate Cover Letter
-        </button>
-      </div>
-    </form>
-
-    <div id="researchResult"></div>
-    <div id="matchResult"></div>
-    <div id="generateResult"></div>
+      <table id="trackerTable">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Role</th>
+            <th>Score</th>
+            <th>Sent to</th>
+            <th>Applied</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="trackerTableBody">
+          <tr>
+            <td colspan="6" style="padding: 10px; color: var(--muted)">
+              Loading…
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <!-- Step 5: review-gate modal. Nothing sends until "Confirm & Send" below is clicked. -->
     <div id="sendModal">
       <div class="modal-box">
-        <h2 style="margin-top: 0">Review before sending</h2>
-        <p style="color: #555; font-size: 0.85rem">
+        <h2>Review before sending</h2>
+        <p class="modal-note">
           Nothing is sent until you click <strong>Confirm &amp; Send</strong>.
           Edit anything you like first.
         </p>
 
         <label>To</label>
         <input type="email" id="sendTo" placeholder="hiring-team@company.com" />
-        <div style="margin-top: 6px">
-          <button
-            type="button"
-            id="findContactBtn"
-            style="font-size: 0.8rem; padding: 4px 10px"
-          >
-            Find contact email
-          </button>
+        <div style="margin-top: 8px">
+          <button type="button" id="findContactBtn">Find contact email</button>
         </div>
-        <div
-          id="contactFindResult"
-          style="margin-top: 6px; font-size: 0.82rem"
-        ></div>
+        <div id="contactFindResult"></div>
 
         <label>Subject</label>
         <input type="text" id="sendSubject" />
@@ -390,13 +729,15 @@
         <label>Body</label>
         <textarea id="sendBody"></textarea>
 
-        <div style="margin-top: 12px; font-size: 0.82rem; color: #555">
+        <div class="attachment-line">
           Attachment: <span id="sendAttachmentName">(none)</span>
         </div>
 
         <div class="modal-actions">
           <button type="button" id="sendCancelBtn">Cancel</button>
-          <button type="button" id="sendConfirmBtn">Confirm &amp; Send</button>
+          <button type="button" id="sendConfirmBtn" class="secondary">
+            Confirm &amp; Send
+          </button>
         </div>
         <div id="sendStatusMsg"></div>
       </div>
@@ -725,18 +1066,21 @@
             : "<p><em>No cached company research used (click Research Company above first if you want that)</em></p>";
 
           // Step 5: remember this letter (plus the company/role currently in
-          // the form) so the send modal can prefill from it.
+          // the form) so the send modal can prefill from it. match_score is
+          // carried along too (Step 6) so a sent application can be logged
+          // with the score it had at generation time.
           lastGeneratedData = {
             cover_letter: data.cover_letter,
             company: mainForm.company.value.trim(),
             role: mainForm.role.value.trim(),
+            match_score: data.match_score,
           };
 
           generateResultDiv.innerHTML = `
           <p><strong>Match score:</strong> ${data.match_score}%</p>
           ${researchLine}
           <p><strong>Cover Letter:</strong></p>
-          <div style="background:#fff;padding:12px;border-radius:6px;white-space:pre-wrap;">${data.cover_letter}</div>
+          <div style="background:#fff;border:2px solid var(--ink);padding:14px;white-space:pre-wrap;">${data.cover_letter}</div>
           <div class="btn-row">
             <button type="button" id="sendViaGmailBtn" disabled title="Connect Gmail first">Send via Gmail…</button>
           </div>
@@ -823,9 +1167,17 @@
           lastGeneratedData.cover_letter || "";
 
         const resumeFile = mainForm.resume_file.files[0] || null;
-        document.getElementById("sendAttachmentName").textContent = resumeFile
-          ? resumeFile.name
-          : "(none — no resume file was uploaded; pasted text can't be attached)";
+        const pastedText = mainForm.pasted_resume_text.value.trim();
+        const attachmentLabel = document.getElementById("sendAttachmentName");
+        if (resumeFile) {
+          attachmentLabel.textContent = resumeFile.name;
+        } else if (pastedText) {
+          attachmentLabel.textContent =
+            "Resume.docx (will be generated from your pasted resume text)";
+        } else {
+          attachmentLabel.textContent =
+            "(none — no resume file or pasted text found)";
+        }
 
         document.getElementById("sendStatusMsg").textContent = "";
         document.getElementById("contactFindResult").innerHTML = "";
@@ -868,7 +1220,7 @@
             } else if (data.tier === "verified") {
               document.getElementById("sendTo").value = data.email;
               resultDiv.innerHTML = `<span class="verified">✓ Found: ${data.email}</span>
-            <div style="color:#666;">Source: <a href="${data.source_url}" target="_blank" rel="noopener">${data.source_title || data.source_url}</a> — ${data.note || ""}</div>`;
+            <div style="color:var(--muted);">Source: <a href="${data.source_url}" target="_blank" rel="noopener">${data.source_title || data.source_url}</a> — ${data.note || ""}</div>`;
             } else if (data.tier === "guess") {
               const chips = data.guesses
                 .map(
@@ -877,7 +1229,7 @@
                 )
                 .join("");
               resultDiv.innerHTML = `<div class="guess-note">No verified email found. Unverified guesses — click to use, but double check:</div>${chips}
-            <div style="color:#888;margin-top:4px;">${data.note || ""}</div>`;
+            <div style="color:var(--muted);margin-top:4px;">${data.note || ""}</div>`;
               resultDiv.querySelectorAll(".guess-chip").forEach((chip) => {
                 chip.addEventListener("click", () => {
                   document.getElementById("sendTo").value = chip.dataset.email;
@@ -916,7 +1268,22 @@
             document.getElementById("sendBody").value,
           );
           const resumeFile = mainForm.resume_file.files[0];
-          if (resumeFile) formData.append("attachment", resumeFile);
+          if (resumeFile) {
+            formData.append("attachment", resumeFile);
+          } else {
+            // No uploaded file — fall back to whatever was pasted, so the
+            // backend can render it into a .docx. Uploaded files always
+            // take priority (see /api/gmail/send).
+            const pastedText = mainForm.pasted_resume_text.value.trim();
+            if (pastedText) formData.append("pasted_resume_text", pastedText);
+          }
+          // Step 6: pass context through so a successful send can be logged.
+          if (lastGeneratedData) {
+            formData.append("company", lastGeneratedData.company || "");
+            formData.append("role", lastGeneratedData.role || "");
+            if (lastGeneratedData.match_score != null)
+              formData.append("match_score", lastGeneratedData.match_score);
+          }
 
           const confirmBtn = document.getElementById("sendConfirmBtn");
           confirmBtn.disabled = true;
@@ -929,11 +1296,26 @@
             });
             const data = await res.json();
             if (res.ok && data.sent) {
-              statusMsg.textContent =
-                "Sent ✓ (Gmail message id: " + data.message_id + ")";
+              let msg = data.logged
+                ? "Sent ✓ and added to your tracker (Gmail message id: " +
+                  data.message_id +
+                  ")"
+                : "Sent ✓ (Gmail message id: " +
+                  data.message_id +
+                  ") — but could not log it to the tracker, add it manually if needed.";
+              if (
+                !data.resume_attached &&
+                (resumeFile || mainForm.pasted_resume_text.value.trim())
+              ) {
+                msg +=
+                  " Note: the resume attachment could not be built, so it was sent without one.";
+              }
+              statusMsg.textContent = msg;
               setTimeout(() => {
                 sendModal.style.display = "none";
-              }, 1500);
+              }, 1800);
+              if (typeof refreshTrackerIfVisible === "function")
+                refreshTrackerIfVisible();
             } else {
               statusMsg.textContent =
                 "Failed: " + (data.detail || "unknown error");
@@ -958,6 +1340,152 @@
         }
         refreshGmailStatus();
       })();
+
+      // ---------- Step 6: tabs ----------
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab-btn")
+            .forEach((b) => b.classList.remove("active"));
+          document
+            .querySelectorAll(".tab-panel")
+            .forEach((p) => p.classList.remove("active"));
+          btn.classList.add("active");
+          const panel = document.getElementById(btn.dataset.tab);
+          panel.classList.add("active");
+          if (btn.dataset.tab === "trackerTab") {
+            loadTracker();
+          }
+        });
+      });
+
+      // Called from the send-confirm handler after a successful send, but
+      // only actually refetches if the tracker tab is the one currently visible
+      // — no point burning a request updating a table nobody's looking at.
+      function refreshTrackerIfVisible() {
+        const trackerPanel = document.getElementById("trackerTab");
+        if (trackerPanel.classList.contains("active")) loadTracker();
+      }
+
+      function escapeHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str == null ? "" : String(str);
+        return div.innerHTML;
+      }
+
+      function formatAppliedDate(isoString) {
+        try {
+          const d = new Date(isoString);
+          return d.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          });
+        } catch (e) {
+          return isoString;
+        }
+      }
+
+      async function loadTrackerStats() {
+        const statsDiv = document.getElementById("trackerStats");
+        try {
+          const res = await fetch("/api/tracker/stats");
+          const s = await res.json();
+          statsDiv.textContent = `${s.total} total — ${s.applied} applied · ${s.interviewing} interviewing · ${s.offer} offer · ${s.rejected} rejected · ${s.withdrawn} withdrawn`;
+        } catch (err) {
+          statsDiv.textContent = "Could not load stats.";
+        }
+      }
+
+      async function loadTracker() {
+        const tbody = document.getElementById("trackerTableBody");
+        const statusFilter = document.getElementById(
+          "trackerStatusFilter",
+        ).value;
+        tbody.innerHTML =
+          '<tr><td colspan="6" style="padding:10px;color:var(--muted);">Loading…</td></tr>';
+
+        loadTrackerStats();
+
+        try {
+          const url =
+            "/api/tracker/applications" +
+            (statusFilter ? "?status=" + encodeURIComponent(statusFilter) : "");
+          const res = await fetch(url);
+          const data = await res.json();
+          const apps = data.applications || [];
+
+          if (apps.length === 0) {
+            tbody.innerHTML =
+              '<tr><td colspan="6" style="padding:10px;color:var(--muted);">No applications logged yet — they\'re added automatically when you send via Gmail.</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = apps
+            .map(
+              (app) => `
+          <tr data-app-id="${app.id}">
+            <td>${escapeHtml(app.company)}</td>
+            <td>${escapeHtml(app.role)}</td>
+            <td>${app.match_score != null ? app.match_score + "%" : "—"}</td>
+            <td>${escapeHtml(app.recipient_email)}</td>
+            <td>${formatAppliedDate(app.applied_at)}</td>
+            <td>
+              <select class="status-select" data-app-id="${app.id}">
+                <option value="applied"${app.status === "applied" ? " selected" : ""}>Applied</option>
+                <option value="interviewing"${app.status === "interviewing" ? " selected" : ""}>Interviewing</option>
+                <option value="offer"${app.status === "offer" ? " selected" : ""}>Offer</option>
+                <option value="rejected"${app.status === "rejected" ? " selected" : ""}>Rejected</option>
+                <option value="withdrawn"${app.status === "withdrawn" ? " selected" : ""}>Withdrawn</option>
+              </select>
+            </td>
+          </tr>
+        `,
+            )
+            .join("");
+
+          tbody.querySelectorAll(".status-select").forEach((sel) => {
+            sel.addEventListener("change", async () => {
+              const appId = sel.dataset.appId;
+              const newStatus = sel.value;
+              sel.disabled = true;
+              try {
+                const res = await fetch("/api/tracker/applications/" + appId, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ status: newStatus }),
+                });
+                if (!res.ok) {
+                  const err = await res.json();
+                  alert(
+                    "Could not update status: " +
+                      (err.detail || "unknown error"),
+                  );
+                } else {
+                  loadTrackerStats();
+                  // If a filter is active and this row no longer matches it, refresh the list
+                  if (document.getElementById("trackerStatusFilter").value)
+                    loadTracker();
+                }
+              } catch (err) {
+                alert("Could not update status: " + err);
+              } finally {
+                sel.disabled = false;
+              }
+            });
+          });
+        } catch (err) {
+          tbody.innerHTML =
+            '<tr><td colspan="6" style="padding:10px;color:var(--stamp);">Failed to load applications.</td></tr>';
+        }
+      }
+
+      document
+        .getElementById("trackerRefreshBtn")
+        .addEventListener("click", loadTracker);
+      document
+        .getElementById("trackerStatusFilter")
+        .addEventListener("change", loadTracker);
     </script>
   </body>
 </html>
